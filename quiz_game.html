@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>₮ Санхүүгийн Тоглоом — TVM Quiz</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --blue:#1a56db;--blue-light:#e8f0fe;--blue-dark:#1446c0;
+  --green:#059669;--green-light:#d1fae5;
+  --red:#dc2626;--red-light:#fee2e2;
+  --gold:#f59e0b;--gold-light:#fef3c7;
+  --ink:#0f172a;--muted:#64748b;--border:#e2e8f0;
+  --surface:#f8fafc;--white:#fff;
+}
+body{
+  font-family:'DM Sans',sans-serif;
+  background:linear-gradient(135deg,#0f172a,#1e3a5f,#0f172a);
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  padding:1.5rem;
+}
+
+.game{width:100%;max-width:680px}
+
+/* INTRO */
+.screen{display:none;animation:fadeIn 0.4s ease}
+.screen.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+.card{
+  background:rgba(255,255,255,0.97);
+  border-radius:24px;padding:2.5rem;
+  box-shadow:0 24px 80px rgba(0,0,0,0.4);
+}
+
+/* INTRO SCREEN */
+.intro-badge{
+  display:inline-flex;align-items:center;gap:7px;
+  background:var(--blue-light);color:var(--blue);
+  font-size:0.72rem;font-weight:700;padding:5px 14px;
+  border-radius:999px;letter-spacing:0.07em;text-transform:uppercase;
+  margin-bottom:1.5rem;border:1px solid rgba(26,86,219,0.2);
+}
+.intro-title{
+  font-family:'DM Serif Display',serif;
+  font-size:2.4rem;color:var(--ink);line-height:1.1;margin-bottom:0.75rem;
+}
+.intro-title em{color:var(--blue);font-style:italic}
+.intro-sub{font-size:0.97rem;color:var(--muted);line-height:1.7;margin-bottom:2rem}
+.intro-levels{display:grid;grid-template-columns:repeat(3,1fr);gap:0.875rem;margin-bottom:2rem}
+.level-btn{
+  border:1.5px solid var(--border);border-radius:14px;padding:1.25rem 1rem;
+  cursor:pointer;transition:all 0.22s;background:white;text-align:center;
+}
+.level-btn:hover{border-color:var(--blue);transform:translateY(-3px);box-shadow:0 8px 24px rgba(26,86,219,0.12)}
+.level-btn.selected{border-color:var(--blue);background:var(--blue-light)}
+.level-icon{font-size:1.8rem;margin-bottom:0.4rem}
+.level-name{font-size:0.82rem;font-weight:700;color:var(--ink);margin-bottom:0.2rem}
+.level-desc{font-size:0.7rem;color:var(--muted)}
+.start-btn{
+  width:100%;padding:0.9rem;border-radius:12px;border:none;
+  background:var(--blue);color:white;font-size:1rem;font-weight:700;
+  cursor:pointer;font-family:'DM Sans',sans-serif;
+  transition:all 0.2s;letter-spacing:0.02em;
+}
+.start-btn:hover{background:var(--blue-dark);transform:translateY(-2px);box-shadow:0 8px 24px rgba(26,86,219,0.3)}
+
+/* QUIZ HEADER */
+.quiz-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem}
+.qh-left{display:flex;flex-direction:column;gap:4px}
+.q-counter{font-size:0.72rem;font-weight:700;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase}
+.q-score-wrap{display:flex;align-items:center;gap:8px}
+.q-score{font-family:'DM Serif Display',serif;font-size:1.4rem;color:var(--blue)}
+.q-lives{display:flex;gap:4px}
+.life{font-size:1.1rem;transition:all 0.3s}
+.life.lost{opacity:0.2;transform:scale(0.8)}
+
+/* PROGRESS */
+.prog-bar{height:6px;background:var(--border);border-radius:3px;margin-bottom:1.75rem;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--blue),#60a5fa);border-radius:3px;transition:width 0.5s ease}
+
+/* TIMER */
+.timer-wrap{display:flex;align-items:center;gap:10px;margin-bottom:1.5rem}
+.timer-bar{flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+.timer-fill{height:100%;border-radius:4px;transition:width 0.1s linear;background:var(--green)}
+.timer-fill.warn{background:var(--gold)}
+.timer-fill.danger{background:var(--red)}
+.timer-num{font-family:'DM Serif Display',serif;font-size:1.1rem;color:var(--ink);min-width:28px;text-align:right}
+
+/* QUESTION */
+.q-category{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:0.68rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+  padding:3px 10px;border-radius:999px;margin-bottom:0.875rem;
+}
+.cat-basic{background:var(--blue-light);color:var(--blue)}
+.cat-calc{background:var(--gold-light);color:#92400e}
+.cat-apply{background:var(--green-light);color:#065f46}
+
+.q-text{
+  font-family:'DM Serif Display',serif;
+  font-size:1.35rem;color:var(--ink);line-height:1.4;
+  margin-bottom:0.5rem;
+}
+.q-hint{font-size:0.82rem;color:var(--muted);margin-bottom:1.5rem;line-height:1.55}
+
+/* FORMULA DISPLAY */
+.formula-box{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:0.875rem 1.25rem;
+  font-family:'DM Serif Display',serif;font-size:1.1rem;
+  color:var(--blue);text-align:center;margin-bottom:1.25rem;
+}
+
+/* OPTIONS */
+.options{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1.25rem}
+.opt-btn{
+  padding:1rem 1.125rem;border-radius:12px;
+  border:1.5px solid var(--border);background:white;
+  font-size:0.9rem;font-weight:500;color:var(--ink);
+  cursor:pointer;transition:all 0.18s;text-align:left;
+  font-family:'DM Sans',sans-serif;line-height:1.4;
+  display:flex;align-items:flex-start;gap:10px;
+}
+.opt-btn:hover:not(:disabled){border-color:var(--blue);background:var(--blue-light);transform:translateY(-2px)}
+.opt-btn:disabled{cursor:not-allowed}
+.opt-btn.correct{border-color:var(--green)!important;background:var(--green-light)!important;color:#065f46}
+.opt-btn.wrong{border-color:var(--red)!important;background:var(--red-light)!important;color:#7f1d1d}
+.opt-btn.missed{border-color:var(--green)!important;background:var(--green-light)!important;opacity:0.7}
+.opt-letter{
+  width:24px;height:24px;border-radius:6px;flex-shrink:0;
+  background:var(--surface);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.72rem;font-weight:700;color:var(--muted);margin-top:1px;
+  transition:all 0.18s;
+}
+.opt-btn.correct .opt-letter{background:var(--green);border-color:var(--green);color:white}
+.opt-btn.wrong .opt-letter{background:var(--red);border-color:var(--red);color:white}
+.opt-btn.missed .opt-letter{background:var(--green);border-color:var(--green);color:white}
+
+/* FEEDBACK */
+.feedback{
+  border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem;
+  display:none;animation:fadeIn 0.3s ease;
+}
+.feedback.show{display:flex;gap:10px;align-items:flex-start}
+.feedback.correct{background:var(--green-light);border:1px solid rgba(5,150,105,0.2)}
+.feedback.wrong{background:var(--red-light);border:1px solid rgba(220,38,38,0.2)}
+.fb-icon{font-size:1.3rem;flex-shrink:0}
+.fb-body{}
+.fb-title{font-size:0.88rem;font-weight:700;margin-bottom:0.2rem}
+.feedback.correct .fb-title{color:#065f46}
+.feedback.wrong .fb-title{color:#7f1d1d}
+.fb-text{font-size:0.8rem;line-height:1.6;color:var(--muted)}
+
+.next-btn{
+  width:100%;padding:0.8rem;border-radius:11px;border:none;
+  background:var(--ink);color:white;font-size:0.9rem;font-weight:600;
+  cursor:pointer;font-family:'DM Sans',sans-serif;
+  transition:all 0.2s;display:none;
+}
+.next-btn.show{display:block}
+.next-btn:hover{background:#1e293b;transform:translateY(-1px)}
+
+/* COMBO */
+.combo-banner{
+  text-align:center;padding:0.5rem;font-size:0.82rem;
+  font-weight:600;color:var(--gold);margin-bottom:0.75rem;
+  min-height:28px;
+}
+
+/* RESULT SCREEN */
+.result-header{text-align:center;margin-bottom:2rem}
+.result-emoji{font-size:4rem;margin-bottom:0.75rem;display:block}
+.result-title{font-family:'DM Serif Display',serif;font-size:2rem;color:var(--ink);margin-bottom:0.4rem}
+.result-sub{font-size:0.9rem;color:var(--muted)}
+.result-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.875rem;margin-bottom:2rem}
+.result-stat{background:var(--surface);border-radius:12px;padding:1.25rem;text-align:center;border:1px solid var(--border)}
+.rs-val{font-family:'DM Serif Display',serif;font-size:1.8rem;margin-bottom:0.2rem}
+.rs-label{font-size:0.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em}
+.grade-box{
+  border-radius:16px;padding:1.5rem;text-align:center;margin-bottom:1.75rem;
+  border:2px solid;
+}
+.grade-A{border-color:var(--green);background:var(--green-light)}
+.grade-B{border-color:var(--blue);background:var(--blue-light)}
+.grade-C{border-color:var(--gold);background:var(--gold-light)}
+.grade-D{border-color:var(--red);background:var(--red-light)}
+.grade-letter{font-family:'DM Serif Display',serif;font-size:3rem;margin-bottom:0.3rem}
+.grade-A .grade-letter{color:var(--green)}
+.grade-B .grade-letter{color:var(--blue)}
+.grade-C .grade-letter{color:#92400e}
+.grade-D .grade-letter{color:var(--red)}
+.grade-text{font-size:0.88rem;line-height:1.55}
+.grade-A .grade-text{color:#065f46}
+.grade-B .grade-text{color:var(--blue-dark)}
+.grade-C .grade-text{color:#92400e}
+.grade-D .grade-text{color:#7f1d1d}
+.result-btns{display:flex;gap:0.875rem}
+.r-btn{flex:1;padding:0.8rem;border-radius:11px;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s;border:none}
+.r-btn-primary{background:var(--blue);color:white}
+.r-btn-primary:hover{background:var(--blue-dark)}
+.r-btn-outline{background:white;color:var(--ink);border:1.5px solid var(--border)!important;}
+.r-btn-outline:hover{border-color:var(--blue)!important;color:var(--blue)}
+
+/* MOBILE */
+@media(max-width:520px){
+  .card{padding:1.5rem}
+  .options{grid-template-columns:1fr}
+  .intro-levels{grid-template-columns:1fr}
+  .result-grid{grid-template-columns:1fr 1fr}
+  .intro-title{font-size:1.8rem}
+  .q-text{font-size:1.1rem}
+}
+</style>
+</head>
+<body>
+<div class="game">
+
+<!-- ── INTRO ── -->
+<div class="screen active" id="screen-intro">
+<div class="card">
+  <div class="intro-badge">🎓 AI Academy Asia × Golomt Bank</div>
+  <h1 class="intro-title">Мөнгө ба<br><em>Цаг Хугацаа</em></h1>
+  <p class="intro-sub">Мөнгөний цаг хугацааны үнэ цэнийн талаарх мэдлэгээ шалгаарай! Асуулт бүрийг анхааралтай уншиж, зөв хариултыг сонгоорой.</p>
+
+  <div class="intro-levels">
+    <div class="level-btn selected" id="lvl-easy" onclick="selectLevel('easy')">
+      <div class="level-icon">🌱</div>
+      <div class="level-name">Анхан</div>
+      <div class="level-desc">Үндсэн ойлголт</div>
+    </div>
+    <div class="level-btn" id="lvl-mid" onclick="selectLevel('mid')">
+      <div class="level-icon">📊</div>
+      <div class="level-name">Дунд</div>
+      <div class="level-desc">Томъёо хэрэглэх</div>
+    </div>
+    <div class="level-btn" id="lvl-hard" onclick="selectLevel('hard')">
+      <div class="level-icon">🏆</div>
+      <div class="level-name">Ахлах</div>
+      <div class="level-desc">Бодлого бодох</div>
+    </div>
+  </div>
+
+  <button class="start-btn" onclick="startGame()">Тоглоом эхлүүлэх →</button>
+</div>
+</div>
+
+<!-- ── QUIZ ── -->
+<div class="screen" id="screen-quiz">
+<div class="card">
+  <div class="quiz-header">
+    <div class="qh-left">
+      <div class="q-counter" id="q-counter">Асуулт 1 / 10</div>
+      <div class="q-score-wrap">
+        <div class="q-score" id="q-score">0 оноо</div>
+      </div>
+    </div>
+    <div class="q-lives" id="q-lives">
+      <span class="life">❤️</span>
+      <span class="life">❤️</span>
+      <span class="life">❤️</span>
+    </div>
+  </div>
+
+  <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+
+  <div class="timer-wrap">
+    <div class="timer-bar"><div class="timer-fill" id="timer-fill" style="width:100%"></div></div>
+    <div class="timer-num" id="timer-num">20</div>
+  </div>
+
+  <div class="combo-banner" id="combo-banner"></div>
+
+  <div class="q-category" id="q-cat"></div>
+  <div class="q-text" id="q-text"></div>
+  <div class="q-hint" id="q-hint"></div>
+  <div class="formula-box" id="q-formula" style="display:none"></div>
+
+  <div class="options" id="options"></div>
+
+  <div class="feedback" id="feedback">
+    <div class="fb-icon" id="fb-icon"></div>
+    <div class="fb-body">
+      <div class="fb-title" id="fb-title"></div>
+      <div class="fb-text" id="fb-text"></div>
+    </div>
+  </div>
+
+  <button class="next-btn" id="next-btn" onclick="nextQuestion()">Дараагийн асуулт →</button>
+</div>
+</div>
+
+<!-- ── RESULT ── -->
+<div class="screen" id="screen-result">
+<div class="card">
+  <div class="result-header">
+    <span class="result-emoji" id="r-emoji">🎉</span>
+    <div class="result-title" id="r-title">Баяр хүргэе!</div>
+    <div class="result-sub" id="r-sub">Та санхүүгийн мэдлэгтэй!</div>
+  </div>
+
+  <div class="result-grid">
+    <div class="result-stat">
+      <div class="rs-val" id="r-score" style="color:var(--blue)">0</div>
+      <div class="rs-label">Нийт оноо</div>
+    </div>
+    <div class="result-stat">
+      <div class="rs-val" id="r-correct" style="color:var(--green)">0/10</div>
+      <div class="rs-label">Зөв хариулт</div>
+    </div>
+    <div class="result-stat">
+      <div class="rs-val" id="r-time" style="color:var(--gold)">0с</div>
+      <div class="rs-label">Дундаж хугацаа</div>
+    </div>
+  </div>
+
+  <div class="grade-box" id="grade-box">
+    <div class="grade-letter" id="grade-letter">A</div>
+    <div class="grade-text" id="grade-text"></div>
+  </div>
+
+  <div class="result-btns">
+    <button class="r-btn r-btn-outline" onclick="goIntro()">← Буцах</button>
+    <button class="r-btn r-btn-primary" onclick="restartGame()">Дахин тоглох →</button>
+  </div>
+</div>
+</div>
+
+</div>
+
+<script>
+// ── QUESTIONS ──
+var allQuestions = {
+  easy: [
+    {
+      cat:'basic', catLabel:'Үндсэн ойлголт',
+      q:'Та асуулт хариултын тэмцээнд ялж ₮10 сая шагнал авлаа. Аль хувилбар илүү ашигтай вэ?',
+      hint:'Мөнгөний цаг хугацааны үнэ цэнийг бодоорой.',
+      opts:['Яг өнөөдөр авах','2 жилийн дараа авах','Ялгаагүй, адилхан','5 жилийн дараа авах'],
+      correct:0,
+      explain:'Өнөөдөр авсан ₮10 сая хадгаламжид хийвэл хүү орж ирнэ. 2 жил хүлээвэл тэр хүүгийн орлогоо алдана — мөнгийг аль болох эрт авах нь ашигтай!'
+    },
+    {
+      cat:'basic', catLabel:'Үндсэн ойлголт',
+      q:'"Өнөөдрийн мөнгө маргаашийн мөнгөнөөс илүү үнэтэй" гэсэн зарчмын нэр юу вэ?',
+      hint:'Санхүүгийн үндсэн нэг зарчим.',
+      opts:['Инфляцын зарчим','Мөнгөний цаг хугацааны үнэ цэн','Боломжийн зардал','Нийлмэл хүүгийн зарчим'],
+      correct:1,
+      explain:'Time Value of Money (TVM) буюу Мөнгөний цаг хугацааны үнэ цэн гэдэг нь өнөөдрийн мөнгө ирээдүйн ижил хэмжээний мөнгөнөөс илүү үнэ цэнтэй байдаг санхүүгийн үндсэн зарчим юм.'
+    },
+    {
+      cat:'basic', catLabel:'Үндсэн ойлголт',
+      q:'Яагаад өнөөдрийн мөнгө маргаашийн мөнгөнөөс илүү үнэтэй вэ?',
+      hint:'Хоёр үндсэн шалтгаан байна.',
+      opts:['Дэлхийн эдийн засгаас болж','Хүүгийн орлого олох боломж болон инфляцаас болж','Улс төрийн нөхцөл байдлаас болж','Бэлэн мөнгө хүнд байдаггүйгээс болж'],
+      correct:1,
+      explain:'Хоёр үндсэн шалтгаан: 1) Өнөөдрийн мөнгийг хадгаламжид хийж хүүгийн орлого олох боломж байна. 2) Инфляцаас болж мөнгөний худалдан авах чадвар буурна.'
+    },
+    {
+      cat:'basic', catLabel:'Үндсэн ойлголт',
+      q:'Боломжийн зардал (Opportunity Cost) гэж юу вэ?',
+      hint:'Сонголт хийх үед алдагдах зүйл.',
+      opts:['Бараа бүтээгдэхүүний үнэ','Банкны шимтгэл','Нэг сонголт хийхдээ орхисон хамгийн сайн хувилбарын үнэ цэн','Татварын зардал'],
+      correct:2,
+      explain:'Боломжийн зардал гэдэг нь аль нэг зүйлийг сонгохдоо орхисон хамгийн сайн хувилбарын үнэ цэн юм. Жишээ нь: мөнгөө хадгаламжид хийхгүй бол тэр хүүгийн орлогоос татгалзсан хэрэг болно.'
+    },
+    {
+      cat:'basic', catLabel:'Үндсэн ойлголт',
+      q:'Инфляц таны мөнгөнд яаж нөлөөлдөг вэ?',
+      hint:'Барааны үнэ өснө гэдгийг бодоорой.',
+      opts:['Мөнгөний тоо хэмжээ өснө','Мөнгөний худалдан авах чадвар буурна','Мөнгөний худалдан авах чадвар нэмэгдэнэ','Нөлөөлдөггүй'],
+      correct:1,
+      explain:'Инфляц буюу үнийн өсөлтөөс болж барааны үнэ жил бүр өснө. Тиймээс ₮10 сая байсан юм маргааш ₮10.7 сая болж магадгүй — таны бэлэн мөнгөний худалдан авах чадвар буурна.'
+    },
+    {
+      cat:'basic', catLabel:'Үндсэн ойлголт',
+      q:'Ирээдүйн үнэ цэнийг тооцоолоход ямар хүчин зүйл хэрэгтэй вэ?',
+      hint:'Гурван үндсэн хүчин зүйл байна.',
+      opts:['Зөвхөн мөнгөний хэмжээ','Өнөөгийн үнэ цэн, жилийн хүү, хугацаа','Мөнгөний хэмжээ ба улсын нэр','Банкны нэр ба данс'],
+      correct:1,
+      explain:'Ирээдүйн үнэ цэнийг тооцоолоход 3 зүйл хэрэгтэй: 1) Өнөөгийн үнэ цэн (PV), 2) Жилийн хүү (r), 3) Хугацаа (n жил).'
+    },
+    {
+      cat:'basic', catLabel:'Үндсэн ойлголт',
+      q:'"Гаранд байгаа нэг шувуу бутанд байгаа хоёр шувуунаас илүү үнэ цэнтэй" гэсэн үг ямар зарчмыг тайлбарладаг вэ?',
+      hint:'Одоо байгаа зүйл vs ирээдүйн зүйл.',
+      opts:['Шувуу агнах зарчим','Мөнгөний цаг хугацааны үнэ цэн','Хуваарилалтын зарчим','Хуримтлалын зарчим'],
+      correct:1,
+      explain:'Энэ хэлц үг нь мөнгөний цаг хугацааны үнэ цэнийг тайлбарладаг — одоо байгаа бэлэн зүйл ирээдүйн тодорхойгүй зүйлээс илүү үнэтэй.'
+    },
+    {
+      cat:'basic', catLabel:'Үндсэн ойлголт',
+      q:'Хадгаламж болон хөрөнгө оруулалтын хүү ямар үүрэгтэй вэ?',
+      hint:'Мөнгийг ажиллуулах.',
+      opts:['Мөнгийг хэмнэх','Бэлэн мөнгийг хязгаарлах','Мөнгийг ургуулж хүүгийн орлого авах','Татвараас зугтах'],
+      correct:2,
+      explain:'Хадгаламж болон хөрөнгө оруулалт нь таны мөнгийг "ажиллуулж" хүүгийн орлого авах боломж олгодог. Инфляцаас өндөр хүүтэй хөрөнгө оруулалт хийвэл мөнгөний бодит үнэ цэн өснө.'
+    },
+    {
+      cat:'basic', catLabel:'Үндсэн ойлголт',
+      q:'FV томъёонд r тэмдэглэгээ юуг илэрхийлдэг вэ?',
+      hint:'FV = PV × (1+r)ⁿ',
+      formula:'FV = PV × (1 + r)ⁿ',
+      opts:['Хугацааг (жил)','Ирээдүйн үнэ цэнийг','Жилийн хүүг','Өнөөгийн үнэ цэнийг'],
+      correct:2,
+      explain:'FV = PV × (1+r)ⁿ томъёонд: FV = Ирээдүйн үнэ цэн, PV = Өнөөгийн үнэ цэн, r = Жилийн хүү (%), n = Хугацаа (жил).'
+    },
+    {
+      cat:'basic', catLabel:'Үндсэн ойлголт',
+      q:'Өнөөгийн үнэ цэн (PV) гэж юу вэ?',
+      hint:'Ирээдүйн мөнгийг өнөөдрийн үнэлгээ.',
+      opts:['Яг одоо байгаа бэлэн мөнгө','Ирээдүйн мөнгийг өнөөдрийн үнэ цэнээр тооцсон утга','Банкны нийт хөрөнгө','Жилийн хүүгийн дүн'],
+      correct:1,
+      explain:'Өнөөгийн үнэ цэн (Present Value) гэдэг нь ирээдүйд орж ирэх мөнгийг өнөөдрийн үнэ цэнээр буцаан тооцсон утга юм. PV = FV ÷ (1+r)ⁿ томъёогоор тооцоолно.'
+    }
+  ],
+
+  mid: [
+    {
+      cat:'calc', catLabel:'Тооцоолол',
+      q:'Одоогийн ₮10,000,000-ийг жилийн 7% хүүтэй хадгаламжид хийвэл 1 жилийн дараа хэд болох вэ?',
+      hint:'FV = PV × (1 + r)¹',
+      formula:'FV = ₮10,000,000 × (1 + 7%)',
+      opts:['₮10,500,000','₮10,700,000','₮11,000,000','₮10,070,000'],
+      correct:1,
+      explain:'FV = ₮10,000,000 × (1 + 0.07) = ₮10,000,000 × 1.07 = ₮10,700,000. Нэг жилийн дараа ₮700,000 хүү орж нийт ₮10,700,000 болно.'
+    },
+    {
+      cat:'calc', catLabel:'Тооцоолол',
+      q:'2027 оны ₮10,000,000 өнөөдөр (2026) ямар үнэ цэнтэй байх вэ? (7% инфляц)',
+      hint:'PV = FV ÷ (1 + r)¹',
+      formula:'PV = ₮10,000,000 ÷ (1 + 7%)',
+      opts:['₮9,000,000','₮9,345,794','₮9,500,000','₮8,900,000'],
+      correct:1,
+      explain:'PV = ₮10,000,000 ÷ 1.07 = ₮9,345,794. Жилийн дараа ₮10 сая байх юмны өнөөдрийн үнэ цэн ₮9.3 сая орчим байна.'
+    },
+    {
+      cat:'calc', catLabel:'Тооцоолол',
+      q:'₮5,000,000-ийг жилийн 10% хүүтэй 2 жил хадгалавал хэд болох вэ?',
+      hint:'FV = PV × (1 + r)²',
+      formula:'FV = ₮5,000,000 × (1.10)²',
+      opts:['₮5,500,000','₮6,000,000','₮6,050,000','₮6,100,000'],
+      correct:2,
+      explain:'FV = ₮5,000,000 × (1.10)² = ₮5,000,000 × 1.21 = ₮6,050,000. 2 жилийн дараа нийлмэл хүүгийн ачаар ₮1,050,000 өснө!'
+    },
+    {
+      cat:'calc', catLabel:'Тооцоолол',
+      q:'Хэрэв инфляц 7% байвал жилийн ямар хүүтэй хадгаламж хийх нь мөнгөний бодит үнэ цэнийг хадгалах вэ?',
+      hint:'Инфляцаас ялахын тулд...',
+      opts:['5% хүүтэй хадгаламж','7% яг ижил хүүтэй','7%-аас дээш хүүтэй хөрөнгө оруулалт','Хүү хамаагүй'],
+      correct:2,
+      explain:'Инфляцаас дээш хүүтэй хөрөнгө оруулалт хийх хэрэгтэй. 7% инфляц байхад 5% хүүтэй хадгаламж хийвэл мөнгөний бодит худалдан авах чадвар буурна. 7%-аас дээш байх нь зөв.'
+    },
+    {
+      cat:'calc', catLabel:'Тооцоолол',
+      q:'₮1,000,000-ийг жилийн 12% хүүтэй 1 жил хадгалавал хэдэн төгрөг хүү орж ирэх вэ?',
+      hint:'Хүү = PV × r',
+      formula:'Хүү = ₮1,000,000 × 12%',
+      opts:['₮100,000','₮12,000','₮120,000','₮1,200,000'],
+      correct:2,
+      explain:'Хүү = ₮1,000,000 × 0.12 = ₮120,000. Нэг жилийн дараа ₮120,000 хүү орж нийт ₮1,120,000 болно.'
+    },
+    {
+      cat:'calc', catLabel:'Тооцоолол',
+      q:'Хэрэв та ₮10 саяг өнөөдөр авах эсвэл 2 жилийн дараа авах сонголт хийвэл өнөөдөр авах нь хэдний давуу вэ? (7% хүүтэй)',
+      hint:'2 жилийн FV тооцоол.',
+      formula:'FV = ₮10M × (1.07)²',
+      opts:['₮700,000','₮1,400,000','₮1,449,000','₮2,000,000'],
+      correct:2,
+      explain:'FV = ₮10,000,000 × (1.07)² = ₮10,000,000 × 1.1449 = ₮11,449,000. Өнөөдөр авч 2 жил хадгалвал ₮11,449,000 болно — ₮1,449,000 давуу!'
+    },
+    {
+      cat:'calc', catLabel:'Тооцоолол',
+      q:'PV = FV ÷ (1+r)ⁿ томъёонд n юуг илэрхийлдэг вэ?',
+      hint:'FV = PV × (1+r)ⁿ',
+      formula:'PV = FV ÷ (1 + r)ⁿ',
+      opts:['Жилийн хүү','Ирээдүйн үнэ цэн','Хугацаа (жил)','Өнөөгийн үнэ цэн'],
+      correct:2,
+      explain:'n нь хугацааг жилээр илэрхийлдэг. Жишээ нь 3 жилийн хугацаанд n=3 байна. Хугацаа их байх тусам нийлмэл хүүгийн нөлөө их болно.'
+    },
+    {
+      cat:'calc', catLabel:'Тооцоолол',
+      q:'₮20,000,000-ийг жилийн 15% хүүтэй үл хөдлөх хөрөнгөд оруулавал 1 жилийн дараа хэд болох вэ?',
+      hint:'FV = 20M × (1 + 0.15)',
+      formula:'FV = ₮20,000,000 × 1.15',
+      opts:['₮22,000,000','₮23,000,000','₮23,500,000','₮25,000,000'],
+      correct:1,
+      explain:'FV = ₮20,000,000 × 1.15 = ₮23,000,000. Жилийн дараа ₮3,000,000 хүүгийн орлого орж ирнэ — хадгаламжаас (7%) хамаагүй илүү!'
+    },
+    {
+      cat:'calc', catLabel:'Тооцоолол',
+      q:'Нийлмэл хүү (compound interest) гэж юу вэ?',
+      hint:'Хүүний хүү.',
+      opts:['Зөвхөн үндсэн мөнгөнд тооцох хүү','Хүүнд дахин хүү тооцох — хүүний хүү','Хувьцааны ногдол ашиг','Банкны шимтгэл'],
+      correct:1,
+      explain:'Нийлмэл хүү гэдэг нь "хүүний хүү" юм. Жишээ нь ₮1,000,000-д 10% хүү тооцвол жилийн эцэст ₮1,100,000 болно. Дараа жил ₮1,100,000-д 10% тооцвол ₮1,210,000 болно — хүү ч ургана!'
+    },
+    {
+      cat:'calc', catLabel:'Тооцоолол',
+      q:'2 жилийн дараа ₮12,000,000 авахын өнөөгийн үнэ цэн хэд вэ? (жилийн 10% хүүгээр)',
+      hint:'PV = FV ÷ (1+r)²',
+      formula:'PV = ₮12,000,000 ÷ (1.10)²',
+      opts:['₮9,917,355','₮10,000,000','₮10,900,000','₮11,000,000'],
+      correct:0,
+      explain:'PV = ₮12,000,000 ÷ (1.10)² = ₮12,000,000 ÷ 1.21 ≈ ₮9,917,355. Хэдий ₮12 сая мэт их харагдаж байсан ч өнөөдрийн үнэ цэн нь ₮9.9 сая орчим!'
+    }
+  ],
+
+  hard: [
+    {
+      cat:'apply', catLabel:'Бодлого',
+      q:'Нарантуяа ₮50,000,000-ийг жилийн 8% хүүтэй 5 жил хадгалахаар шийдлээ. 5 жилийн дараа хэд болох вэ?',
+      hint:'FV = 50M × (1.08)⁵ ≈ ?',
+      formula:'FV = ₮50,000,000 × (1.08)⁵',
+      opts:['₮70,000,000','₮73,466,400','₮75,000,000','₮80,000,000'],
+      correct:1,
+      explain:'FV = ₮50,000,000 × (1.08)⁵ = ₮50,000,000 × 1.46933 ≈ ₮73,466,400. Нийлмэл хүүгийн хүчээр 5 жилд ₮23.5 сая өснө!'
+    },
+    {
+      cat:'apply', catLabel:'Бодлого',
+      q:'Болд 3 жилийн дараа ₮30,000,000 хэрэгтэй. Жилийн 12% хүүтэй хөрөнгө оруулалт хийхэд өнөөдөр хэдийг хийх ёстой вэ?',
+      hint:'PV = 30M ÷ (1.12)³',
+      formula:'PV = ₮30,000,000 ÷ (1.12)³',
+      opts:['₮20,000,000','₮21,358,000','₮25,000,000','₮27,000,000'],
+      correct:1,
+      explain:'PV = ₮30,000,000 ÷ (1.12)³ = ₮30,000,000 ÷ 1.4049 ≈ ₮21,352,000. Өнөөдөр ₮21.4 сая хийвэл 3 жилд ₮30 сая болно.'
+    },
+    {
+      cat:'apply', catLabel:'Бодлого',
+      q:'Хоёр хөрөнгө оруулалтын аль нь илүү ашигтай вэ?\n А) ₮10 сая, жилийн 15%, 2 жил\n Б) ₮12 сая, жилийн 10%, 2 жил',
+      hint:'Хоёулангийн FV тооцоол.',
+      formula:'FV_A = 10M×(1.15)² | FV_B = 12M×(1.10)²',
+      opts:['А хувилбар (₮13,225,000)','Б хувилбар (₮14,520,000)','Ижилхэн','Тодорхойгүй'],
+      correct:1,
+      explain:'FV_A = ₮10M × 1.3225 = ₮13,225,000. FV_B = ₮12M × 1.21 = ₮14,520,000. Б хувилбар ₮1,295,000 илүү — анхны дүн их байх нь давуу тал!'
+    },
+    {
+      cat:'apply', catLabel:'Бодлого',
+      q:'Инфляц 9%, хадгаламжийн хүү 7% байвал ₮10 сайн бодит худалдан авах чадвар 1 жилд яах вэ?',
+      hint:'Бодит хүү = Нэрлэсэн хүү − Инфляц',
+      formula:'Бодит хүү = 7% − 9% = −2%',
+      opts:['₮200,000-оор нэмэгдэнэ','₮200,000-оор буурна','Хэвээр байна','₮700,000-оор нэмэгдэнэ'],
+      correct:1,
+      explain:'Бодит хүү = 7% − 9% = −2%. Хадгаламжийн хүү инфляцаас бага тул жилийн дараа ₮10 сайн бодит худалдан авах чадвар ₮200,000-оор буурна. Инфляцаас өндөр хүүтэй хөрөнгө оруулалт хэрэгтэй!'
+    },
+    {
+      cat:'apply', catLabel:'Бодлого',
+      q:'Дэлгэрмаа жилийн эцэст ₮5,000,000 хэмнэдэг. Жилийн 10% хүүтэй 3 жил хадгалавал нийт хэд болох вэ?',
+      hint:'Жил бүрийн FV-ийг нэмнэ: 5M×(1.1)² + 5M×(1.1) + 5M',
+      formula:'FV = 5M×(1.1)² + 5M×(1.1)¹ + 5M',
+      opts:['₮15,000,000','₮16,550,000','₮17,000,000','₮18,205,000'],
+      correct:1,
+      explain:'1-р жилийн ₮5M → ₮5M×(1.1)²=₮6,050,000; 2-р жил → ₮5M×1.1=₮5,500,000; 3-р жил → ₮5,000,000. Нийт: ₮6,050,000+₮5,500,000+₮5,000,000 = ₮16,550,000.'
+    },
+    {
+      cat:'apply', catLabel:'Бодлого',
+      q:'Хэрэв мөнгө 10 жилд 2 дахин нэмэгдэнэ гэвэл жилийн хэдэн хувийн хүү байна вэ? (72-ийн дүрэм ашиглана)',
+      hint:'72-ийн дүрэм: Хугацаа = 72 ÷ Хүү%',
+      formula:'72 ÷ n = r → 72 ÷ 10 = ?',
+      opts:['5.5%','7.2%','8%','10%'],
+      correct:1,
+      explain:'"72-ийн дүрэм": мөнгийг хоёр дахин нэмэгдүүлэхэд хэрэгтэй хугацаа ≈ 72 ÷ хүү%. Тиймээс 72 ÷ 10 жил = 7.2% жилийн хүү хэрэгтэй. Энэ бол ухаалаг хялбар тооцоолол!'
+    },
+    {
+      cat:'apply', catLabel:'Бодлого',
+      q:'Ган ₮20 сайг яг одоо авах уу эсвэл 3 жилийн дараа ₮25 сая авах уу? (жилийн 10% хүүтэй)',
+      hint:'₮25М-ийн өнөөгийн үнэ цэнийг тооцоол.',
+      formula:'PV = ₮25M ÷ (1.10)³',
+      opts:['₮20 саяг одоо авах нь дээр','₮25 саяг 3 жилд авах нь дээр','Ижилхэн','Тодорхойгүй'],
+      correct:1,
+      explain:'PV = ₮25,000,000 ÷ (1.10)³ = ₮25M ÷ 1.331 ≈ ₮18,782,000. ₮25М-ийн өнөөгийн үнэ цэн ₮18.8 сая — ₮20М-аас бага! Тиймээс 3 жил хүлээж ₮25М авах нь илүү ашигтай!'
+    },
+    {
+      cat:'apply', catLabel:'Бодлого',
+      q:'Жилийн 6% хүүтэй хадгаламжинд ₮1,000,000 хийвэл 12 жилд хэд болох вэ? (72-ийн дүрэм)',
+      hint:'72 ÷ 6% = 12 жил → 2 дахин нэмэгдэнэ',
+      formula:'72 ÷ 6 = 12 жил ≈ 2× нэмэгдэнэ',
+      opts:['₮1,500,000','₮1,720,000','₮2,000,000','₮2,500,000'],
+      correct:2,
+      explain:'72-ийн дүрмээр: 72 ÷ 6% = 12 жил бол мөнгө 2 дахин болно. Тиймээс ₮1,000,000 → ₮2,000,000 болно. Яг тооцоолол: ₮1,000,000 × (1.06)¹² = ₮2,012,196 — маш ойрхон!'
+    },
+    {
+      cat:'apply', catLabel:'Бодлого',
+      q:'Санхүүгийн эрх чөлөөнд хүрэхийн тулд ямар стратеги зөв вэ?',
+      hint:'TVM зарчмыг бодоорой.',
+      opts:['Мөнгөө зарцуулж туршлага хуримтлуул','Мөнгөө аль болох эрт хадгалж, инфляцаас өндөр хүүтэй хөрөнгөд оруул','Зөвхөн банкны хадгаламж хий','Мөнгийг хойшлуулах нь дандаа дээр'],
+      correct:1,
+      explain:'Зөв стратеги: 1) Мөнгөө аль болох эрт хадгалж эхлэх (нийлмэл хүүгийн хүч), 2) Инфляцаас өндөр хүүтэй хөрөнгөд оруулах, 3) Хугацааг ашиглах. Эрт эхлэх тусам их ашигтай!'
+    },
+    {
+      cat:'apply', catLabel:'Бодлого',
+      q:'Оюунтуяа ₮100 сайг өнөөдөр авах уу эсвэл жилийн дараа ₮108 сая авах уу? (10% хүү)',
+      hint:'₮108М-ийн PV тооцоол.',
+      formula:'PV = ₮108M ÷ 1.10 = ?',
+      opts:['₮108М жилд авах нь дээр','₮100М өнөөдөр авах нь дээр','Ижилхэн','Мэдэхгүй'],
+      correct:1,
+      explain:'PV = ₮108,000,000 ÷ 1.10 = ₮98,181,818. ₮108М-ийн өнөөгийн үнэ цэн ₮98.2 сая — ₮100М-аас бага! Тиймээс ₮100М-ийг өнөөдөр авах нь илүү ашигтай. Жилийн 10% хүүтэй хадгалбал ₮110М болно шүү!'
+    }
+  ]
+};
+
+// ── STATE ──
+var state={
+  level:'easy',
+  questions:[],
+  current:0,
+  score:0,
+  lives:3,
+  combo:0,
+  totalTime:0,
+  answered:false,
+  timer:null,
+  timeLeft:20,
+  correctCount:0
+};
+
+function selectLevel(l){
+  state.level=l;
+  ['easy','mid','hard'].forEach(function(x){
+    document.getElementById('lvl-'+x).classList.toggle('selected',x===l);
+  });
+}
+
+function startGame(){
+  var pool=allQuestions[state.level].slice();
+  // shuffle
+  for(var i=pool.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=pool[i];pool[i]=pool[j];pool[j]=t;}
+  state.questions=pool.slice(0,10);
+  state.current=0;state.score=0;state.lives=3;state.combo=0;state.totalTime=0;state.correctCount=0;
+  showScreen('quiz');
+  renderQuestion();
+}
+
+function renderQuestion(){
+  var q=state.questions[state.current];
+  state.answered=false;
+  state.timeLeft=state.level==='hard'?25:20;
+
+  // header
+  document.getElementById('q-counter').textContent='Асуулт '+(state.current+1)+' / '+state.questions.length;
+  document.getElementById('q-score').textContent=state.score+' оноо';
+  document.getElementById('prog-fill').style.width=((state.current/state.questions.length)*100)+'%';
+
+  // lives
+  var lives=document.getElementById('q-lives').children;
+  for(var i=0;i<3;i++) lives[i].classList.toggle('lost',i>=state.lives);
+
+  // category
+  var catEl=document.getElementById('q-cat');
+  catEl.className='q-category cat-'+q.cat;
+  catEl.textContent=q.catLabel;
+
+  // question
+  document.getElementById('q-text').textContent=q.q;
+  document.getElementById('q-hint').textContent='💡 '+q.hint;
+
+  // formula
+  var fEl=document.getElementById('q-formula');
+  if(q.formula){fEl.style.display='block';fEl.textContent=q.formula;}
+  else{fEl.style.display='none';}
+
+  // options
+  var letters=['A','B','C','D'];
+  var opts=document.getElementById('options');
+  opts.innerHTML='';
+  q.opts.forEach(function(opt,i){
+    var btn=document.createElement('button');
+    btn.className='opt-btn';
+    btn.innerHTML='<span class="opt-letter">'+letters[i]+'</span><span>'+opt+'</span>';
+    btn.onclick=function(){answer(i);};
+    opts.appendChild(btn);
+  });
+
+  // feedback
+  document.getElementById('feedback').className='feedback';
+  document.getElementById('next-btn').className='next-btn';
+  document.getElementById('combo-banner').textContent='';
+
+  startTimer();
+}
+
+function startTimer(){
+  clearInterval(state.timer);
+  var max=state.level==='hard'?25:20;
+  var fill=document.getElementById('timer-fill');
+  var num=document.getElementById('timer-num');
+  state.timer=setInterval(function(){
+    state.timeLeft--;
+    state.totalTime++;
+    var pct=(state.timeLeft/max)*100;
+    fill.style.width=pct+'%';
+    fill.className='timer-fill'+(pct<30?' danger':pct<60?' warn':'');
+    num.textContent=state.timeLeft;
+    if(state.timeLeft<=0){
+      clearInterval(state.timer);
+      timeUp();
+    }
+  },1000);
+}
+
+function timeUp(){
+  if(state.answered)return;
+  state.answered=true;
+  state.lives--;state.combo=0;
+  var q=state.questions[state.current];
+  var btns=document.getElementById('options').children;
+  btns[q.correct].classList.add('missed');
+  for(var i=0;i<btns.length;i++)btns[i].disabled=true;
+  showFeedback(false,'⏰ Хугацаа дууслаа!',q.explain);
+}
+
+function answer(idx){
+  if(state.answered)return;
+  state.answered=true;
+  clearInterval(state.timer);
+
+  var q=state.questions[state.current];
+  var btns=document.getElementById('options').children;
+  var correct=idx===q.correct;
+
+  btns[idx].classList.add(correct?'correct':'wrong');
+  if(!correct) btns[q.correct].classList.add('missed');
+  for(var i=0;i<btns.length;i++)btns[i].disabled=true;
+
+  if(correct){
+    state.combo++;state.correctCount++;
+    var timeBonus=Math.floor(state.timeLeft*10);
+    var comboBonus=state.combo>1?(state.combo-1)*50:0;
+    var points=100+timeBonus+comboBonus;
+    state.score+=points;
+    document.getElementById('q-score').textContent=state.score+' оноо';
+    var cb=document.getElementById('combo-banner');
+    if(state.combo>=3) cb.textContent='🔥 '+state.combo+'× Combo! +'+comboBonus+' оноо';
+    else if(state.combo===2) cb.textContent='⚡ 2× Combo!';
+    showFeedback(true,'✅ Зөв! +'+points+' оноо',q.explain);
+  } else {
+    state.lives--;state.combo=0;
+    showFeedback(false,'❌ Буруу!',q.explain);
+  }
+}
+
+function showFeedback(ok,title,text){
+  var fb=document.getElementById('feedback');
+  fb.className='feedback show '+(ok?'correct':'wrong');
+  document.getElementById('fb-icon').textContent=ok?'🎯':'💡';
+  document.getElementById('fb-title').textContent=title;
+  document.getElementById('fb-text').textContent=text;
+  document.getElementById('next-btn').className='next-btn show';
+}
+
+function nextQuestion(){
+  if(state.lives<=0){endGame();return;}
+  state.current++;
+  if(state.current>=state.questions.length){endGame();return;}
+  renderQuestion();
+}
+
+function endGame(){
+  clearInterval(state.timer);
+  showScreen('result');
+
+  var pct=state.correctCount/state.questions.length;
+  var emoji,title,sub,grade,gradeClass;
+  if(pct>=0.9){emoji='🏆';title='Гайхалтай!';sub='Та санхүүгийн мэдлэгтэй жинхэнэ аварга!';grade='A';gradeClass='grade-A'}
+  else if(pct>=0.7){emoji='🎉';title='Маш сайн!';sub='Та TVM-ийн талаар сайн ойлгож байна!';grade='B';gradeClass='grade-B'}
+  else if(pct>=0.5){emoji='👍';title='Дунд зэрэг!';sub='Дахин давтаж, улам сайжраарай!';grade='C';gradeClass='grade-C'}
+  else{emoji='📚';title='Дахин суралцаарай!';sub='TVM-ийн ойлголтыг дахин нягталж үзээрэй.';grade='D';gradeClass='grade-D'}
+
+  document.getElementById('r-emoji').textContent=emoji;
+  document.getElementById('r-title').textContent=title;
+  document.getElementById('r-sub').textContent=sub;
+  document.getElementById('r-score').textContent=state.score;
+  document.getElementById('r-correct').textContent=state.correctCount+'/'+state.questions.length;
+  document.getElementById('r-time').textContent=Math.round(state.totalTime/state.questions.length)+'с';
+
+  var gb=document.getElementById('grade-box');
+  gb.className='grade-box '+gradeClass;
+  document.getElementById('grade-letter').textContent=grade;
+  var gradeTexts={
+    'A':'Та мөнгөний цаг хугацааны үнэ цэнийн зарчмуудыг маш сайн эзэмшсэн байна. FV, PV томъёо, нийлмэл хүү, бодит хүүгийн ойлголт бүгд танд ойлгомжтой байна!',
+    'B':'Та TVM-ийн үндсэн ойлголтуудыг сайн ойлгож байна. Тооцооллын бодлогуудыг улам дадлагажуулаарай.',
+    'C':'Та TVM-ийн зарим ойлголтуудыг мэдэж байна. Томъёонуудыг сайтар давтаж, дахин оролдоорой!',
+    'D':'TVM судлах сайхан цаг болж байна! Слайдны материалыг дахин харж, суралцаарай.'
+  };
+  document.getElementById('grade-text').textContent=gradeTexts[grade];
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
+  document.getElementById('screen-'+id).classList.add('active');
+}
+
+function goIntro(){showScreen('intro');}
+function restartGame(){startGame();}
+</script>
+</body>
+</html>
